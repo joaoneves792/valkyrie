@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 			if(terminated_pid == forked_pid){ //If we got the immediate child
 				kill(-(forked_pid), SIGKILL); //Atempt to kill all remaining grandchildren
 				sleep(5); //Make sure all grandchildren are reparented to us
-				while( waitpid(-1, &returnStatus, 0) > 0);
+				while( waitpid(-1, &returnStatus, WNOHANG) > 0);
 				return 0;
 			}
 		}
