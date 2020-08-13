@@ -3,19 +3,34 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include <sys/prctl.h>
 #include <signal.h>
 
+pid_t forked_pid;
+
+void term(int signum){
+		kill(-(forked_pid), signum); //Pass the signal to all children
+}
+
 int main(int argc, char** argv){
+  //Set this process as child subreaper
 	prctl(PR_SET_CHILD_SUBREAPER, 1, NULL, NULL, NULL);
 
-	pid_t forked_pid;
+  //Register signal handler
+	struct sigaction action;
+	memset(&action, 0, sizeof(struct sigaction));
+	action.sa_handler = term;
+	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGINT, &action, NULL);
+
+  //Fork and exec
 	if(!(forked_pid = fork())){
 		setpgid(0, 0); // Place the forked process in a new group
 		execv(argv[1], argv+1);
 	}
 
+  //Wait for child termination
 	int returnStatus = -1;
 	pid_t terminated_pid = 0;
 	while(1){
